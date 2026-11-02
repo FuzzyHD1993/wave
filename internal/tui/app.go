@@ -318,13 +318,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tickMsg:
 		m.ticks++
+		cmds := []tea.Cmd{tick()}
 		if m.playing && m.ticks%15 == 0 {
-			return m, m.topupCmd()
+			cmds = append(cmds, m.topupCmd())
+		}
+		if m.ticks%5 == 0 {
+			cmds = append(cmds, m.fetchStatus())
 		}
 		if m.playing && m.dur > 0 && m.elasped < m.dur {
 			m.elasped++
 		}
-		cmds := []tea.Cmd{tick()}
 		if m.flash != "" && time.Now().After(m.flashUntil) {
 			m.flash = ""
 		}
@@ -868,7 +871,16 @@ func (m *Model) renderWave(w, h int) string {
 		b.WriteString(styleHelp.Render("очередь пуста, наполняем волной…") + "\n")
 	}
 	cur := m.songPos
-	for i, it := range m.wave.items {
+	// окно вокруг текущего трека: играющее всегда на виду
+	start := 0
+	if cur >= 0 && cur < len(m.wave.items) {
+		start = cur - 1
+		if start < 0 {
+			start = 0
+		}
+	}
+	for i := start; i < len(m.wave.items); i++ {
+		it := m.wave.items[i]
 		row := m.waveRow(it, cur, i)
 		if row == "" {
 			continue
