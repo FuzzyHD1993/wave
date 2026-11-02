@@ -617,6 +617,16 @@ func (m *Model) libraryKey(msg tea.KeyMsg, k string) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "enter":
 			return m.libraryEnter()
+		case "up":
+			if m.library.cursor > 0 {
+				m.library.cursor--
+			}
+			return m, nil
+		case "down":
+			if m.library.cursor < len(m.library.results)-1 {
+				m.library.cursor++
+			}
+			return m, nil
 		case "tab", "shift+tab":
 			// fall through to global? tab already handled above only when
 			// focused — we got here instead; handle section change
@@ -635,7 +645,7 @@ func (m *Model) libraryKey(msg tea.KeyMsg, k string) (tea.Model, tea.Cmd) {
 		if q != m.library.query {
 			m.library.query = q
 			m.library.results = m.library.load(m, q)
-			m.library.cursor = 0
+			m.library.cursor = firstPlayable(m.library.results)
 		}
 		return m, cmd
 	}
@@ -682,6 +692,16 @@ func (m *Model) waveKey(k string) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// firstPlayable возвращает индекс первого трека (пропускает заголовки артиста/альбома).
+func firstPlayable(items []libItem) int {
+	for i, it := range items {
+		if it.kind == libKindTrack {
+			return i
+		}
+	}
+	return 0
+}
+
 func (m *Model) libraryEnter() (tea.Model, tea.Cmd) {
 	items := m.library.results
 	if m.library.cursor >= len(items) {
@@ -689,6 +709,29 @@ func (m *Model) libraryEnter() (tea.Model, tea.Cmd) {
 	}
 	it := items[m.library.cursor]
 	switch it.kind {
+	case libKindArtist:
+		artist := it.track.Artist
+		return m, func() tea.Msg {
+			tracks, err := m.st.ArtistTracks(artist)
+			if err != nil {
+				return actionMsg{err: err}
+			}
+			if len(tracks) == 0 {
+				return actionMsg{err: errors.New("у артиста нет треков")}
+			}
+			if err := m.mp.Clear(); err != nil {
+				return actionMsg{err: err}
+			}
+			for _, t := range tracks {
+				if err := m.mp.Append(t.ID); err != nil {
+					return actionMsg{err: err}
+				}
+			}
+			if err := m.mp.Play(0); err != nil {
+				return actionMsg{err: err}
+			}
+			return actionMsg{ok: fmt.Sprintf("▶ %s — %d треков", artist, len(tracks))}
+		}
 	case libKindAlbum:
 		artist, album := it.track.Artist, it.track.Album
 		return m, func() tea.Msg {
