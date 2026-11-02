@@ -1,0 +1,4 @@
+/wave
+*.db
+*.db-wal
+*.db-shm
