@@ -76,8 +76,8 @@ type syncMsg struct {
 }
 
 type actionMsg struct {
-	ok  string
-	err error
+	ok   string
+	err  error
 	file string
 }
 
@@ -95,7 +95,7 @@ type Model struct {
 	obs   *daemon.Observer
 	radio *radio.Radio
 
-	sec section
+	sec  section
 	w, h int
 
 	library libPane
@@ -104,27 +104,28 @@ type Model struct {
 	stats   statsPane
 
 	// player snapshot
-	playing  bool
-	volume   int
-	elasped  float64
-	dur      float64
-	songPos  int
-	plLen    int
-	curURI   string
+	playing   bool
+	volume    int
+	elasped   float64
+	dur       float64
+	songPos   int
+	plLen     int
+	curURI    string
 	curArtist string
 	curTitle  string
-	curLiked bool
-	likedSet map[string]bool
+	curLiked  bool
+	likedSet  map[string]bool
 
 	queue []queueItem
 
 	// wave keeping
-	rng        *rand.Rand
-	syncing    bool
+	rng          *rand.Rand
+	syncing      bool
 	bootstrapped bool
-	flash      string
-	flashUntil time.Time
-	errStr     string
+	ticks        int
+	flash        string
+	flashUntil   time.Time
+	errStr       string
 }
 
 // NewModel builds the model (no IO here).
@@ -134,13 +135,13 @@ func NewModel(st *store.Store, mp *mpdclient.Client, obs *daemon.Observer) Model
 	in.Prompt = "/ "
 	in.CharLimit = 100
 	m := Model{
-		st:    st,
-		mp:    mp,
-		obs:   obs,
-		radio: radio.New(st),
-		sec:   secWave,
+		st:     st,
+		mp:     mp,
+		obs:    obs,
+		radio:  radio.New(st),
+		sec:    secWave,
 		volume: -1,
-		rng:   rand.New(rand.NewSource(time.Now().UnixNano())),
+		rng:    rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 	m.library.input = in
 	return m
@@ -316,6 +317,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tickMsg:
+		m.ticks++
+		if m.playing && m.ticks%15 == 0 {
+			return m, m.topupCmd()
+		}
 		if m.playing && m.dur > 0 && m.elasped < m.dur {
 			m.elasped++
 		}
@@ -989,7 +994,7 @@ func (m *Model) renderStatusBar(w int) string {
 	}
 	left.WriteString(state + " " + name + liked)
 	if m.flash != "" {
-		return lipgloss.NewStyle().Foreground(cAccent).Width(w).Render(" "+state+" "+name+"   "+m.flash)
+		return lipgloss.NewStyle().Foreground(cAccent).Width(w).Render(" " + state + " " + name + "   " + m.flash)
 	}
 	// progress line
 	bar := progressBar(m.elasped, m.dur, min(w-1, 92))

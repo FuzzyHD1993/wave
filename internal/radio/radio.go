@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	upcomingTarget   = 20 // keep this many upcoming tracks in the queue
-	upcomingMin      = 5  // top-up trigger threshold
+	upcomingTarget   = 30 // keep this many upcoming tracks in the queue
+	upcomingMin      = 10 // top-up trigger threshold
 	exploreRatio     = 0.2
 	recentTracks     = 50
 	recentArtists    = 30
@@ -139,18 +139,18 @@ func (r *Radio) artistsOf(ids []string) (map[string]string, error) {
 // ---------- scoring ----------
 
 type scoredArtist struct {
-	name   string
-	score  float64
-	likes  float64
-	plays  int64
+	name    string
+	score   float64
+	likes   float64
+	plays   int64
 	explore bool // zero plays
 }
 
 // Weights holds the ready-to-sample artist score distribution.
 type Weights struct {
-	all       []scoredArtist
-	byName    map[string]*scoredArtist
-	totalMass float64
+	all          []scoredArtist
+	byName       map[string]*scoredArtist
+	totalMass    float64
 	totalExplore float64
 }
 
