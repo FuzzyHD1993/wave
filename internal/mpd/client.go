@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fhs/gompd/v2/mpd"
 )
@@ -89,6 +90,13 @@ func (c *Client) Prev() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.c.Previous()
+}
+
+// Seek moves the current song by offset (negative rewinds).
+func (c *Client) Seek(offset time.Duration) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.c.SeekCur(offset, true)
 }
 
 // SetVolume sets the mixer volume (0-100).

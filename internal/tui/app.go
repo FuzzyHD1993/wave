@@ -481,6 +481,14 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.likeCurrent()
 	case "s", "delete":
 		return m.skip()
+	case "left":
+		return m, m.seek(-5 * time.Second)
+	case "right":
+		return m, m.seek(5 * time.Second)
+	case "shift+left":
+		return m, m.seek(-30 * time.Second)
+	case "shift+right":
+		return m, m.seek(30 * time.Second)
 	case "r":
 		return m, m.resync()
 	case "/":
@@ -550,6 +558,19 @@ func (m *Model) setVolume(v int) tea.Cmd {
 			v = 100
 		}
 		return actionMsg{err: m.mp.SetVolume(v)}
+	}
+}
+
+func (m *Model) seek(offset time.Duration) tea.Cmd {
+	label := fmt.Sprintf("+%s", offset)
+	if offset < 0 {
+		label = fmt.Sprintf("−%s", -offset)
+	}
+	return func() tea.Msg {
+		if err := m.mp.Seek(offset); err != nil {
+			return actionMsg{err: err}
+		}
+		return actionMsg{ok: "перемотка " + label}
 	}
 }
 

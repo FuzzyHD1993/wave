@@ -32,7 +32,8 @@ wave stats                    # статистика
 
 ## Клавиши
 
-`space` play/pause · `n`/`p` next/prev · `+`/`-` громкость · `l` лайк ·
+`space` play/pause · `n`/`p` next/prev · `←`/`→` перемотка ±5 с · `Shift+←`/`Shift+→` ±30 с ·
+`+`/`-` громкость · `l` лайк ·
 `s` скип · `r` обновить · `Tab`/`Shift+Tab` разделы · `q` выход
 
 ## Настройки
